@@ -11,7 +11,7 @@
 #include <time.h>
 #include "glm.h"
 #include <FreeImage.h> //*** Para Textura: Incluir librería
-
+#include "Mundo.h"
 //-----------------------------------------------------------------------------
 
 
@@ -25,89 +25,43 @@ protected:
    clock_t time0,time1;
    float timer010;  // timer counting 0->1->0
    bool bUp;        // flag if counting up or down.
-   GLMmodel* objmodel_ptr;
-   GLMmodel* dinamita_ptr;
-   GLMmodel* hobbit;
+   Mundo* mundo;
 
-   GLMmodel* objmodel_ptr1; //*** Para Textura: variable para objeto texturizado
-   GLuint texid; //*** Para Textura: variable que almacena el identificador de textura
-
+   //GLMmodel* objmodel_ptr1; //*** Para Textura: variable para objeto texturizado
+   //GLuint texid; //*** Para Textura: variable que almacena el identificador de textura
 
 public:
 	myWindow(){}
-
-	//*** Para Textura: aqui adiciono un método que abre la textura en JPG
-	void initialize_textures(void)
-	{
-		int w, h;
-		GLubyte* data = 0;
-		//data = glmReadPPM("soccer_ball_diffuse.ppm", &w, &h);
-		//std::cout << "Read soccer_ball_diffuse.ppm, width = " << w << ", height = " << h << std::endl;
-
-		//dib1 = loadImage("soccer_ball_diffuse.jpg"); //FreeImage
-
-		glGenTextures(1, &texid);
-		glBindTexture(GL_TEXTURE_2D, texid);
-		glTexEnvi(GL_TEXTURE_2D, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-		// Loading JPG file
-		FIBITMAP* bitmap = FreeImage_Load(
-			FreeImage_GetFileType("./Mallas/bola.jpg", 0),
-			"./Mallas/bola.jpg");  //*** Para Textura: esta es la ruta en donde se encuentra la textura
-
-		FIBITMAP* pImage = FreeImage_ConvertTo32Bits(bitmap);
-		int nWidth = FreeImage_GetWidth(pImage);
-		int nHeight = FreeImage_GetHeight(pImage);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, nWidth, nHeight,
-			0, GL_BGRA, GL_UNSIGNED_BYTE, (void*)FreeImage_GetBits(pImage));
-
-		FreeImage_Unload(pImage);
-		//
-		glEnable(GL_TEXTURE_2D);
-	}
-
 
 	virtual void OnRender(void)
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-      //timer010 = 0.09; //for screenshot!
+		//timer010 = 0.09; //for screenshot!
+		
+		glPushMatrix();
+		//posicion y rotacion de la camara
+		//glTranslatef(0, 0, -10);
+		glRotatef(180, 0, 1, 0);
 
-      glPushMatrix();
-	  //glRotatef(0, 0.5, 1.0f, 0.1f);
+		//*** Para Textura: llamado al shader para objetos texturizados 
+		if (shader1) shader1->begin();
+		glPushMatrix();
+		mundo->DrawWithTexture();
+		glPopMatrix();
+		if (shader1) shader1->end();
 
-      if (shader) shader->begin();
-		  
-		  glPushMatrix();
-		  glTranslatef(-1.5f, 0.0f, 0.0f);
-		  glmDraw(objmodel_ptr, GLM_SMOOTH | GLM_MATERIAL);
-		  glTranslatef(3.0f, 0.0f, 0.0f);
-		  glmDraw(dinamita_ptr, GLM_SMOOTH | GLM_MATERIAL);
-		  glPopMatrix();
-	      //glutSolidTeapot(1.0);
-      if (shader) shader->end();
+		if (shader) shader->begin();		  
+			glPushMatrix();
+			mundo->DrawNoTexture();
+			glPopMatrix();
+		if (shader) shader->end();
 
-	  //*** Para Textura: llamado al shader para objetos texturizados
-	  /*
-	  if (shader1) shader1->begin();
+		
+		glutSwapBuffers();
+		glPopMatrix();
 
-		  glPushMatrix();
-		  glTranslatef(1.5f, 0.0f, 0.0f);
-		  glBindTexture(GL_TEXTURE_2D, texid);
-		  glmDraw(objmodel_ptr1, GLM_SMOOTH | GLM_MATERIAL | GLM_TEXTURE);
-		  glPopMatrix();
-	  */
-	  //glutSolidTeapot(1.0);
-	  if (shader1) shader1->end();
-
-
-      glutSwapBuffers();
-      glPopMatrix();
-
-      UpdateTimer();
+		UpdateTimer();
 
 		Repaint();
 	}
@@ -116,20 +70,6 @@ public:
 
 	// When OnInit is called, a render context (in this case GLUT-Window) 
 	// is already available!
-	void initModel(GLMmodel** model, char * path)
-	{
-		*model = NULL;
-		if (!*model)
-		{
-			*model = glmReadOBJ(path);
-			if (!*model)
-				exit(0);
-
-			glmUnitize(*model);
-			glmFacetNormals(*model);
-			glmVertexNormals(*model, 90.0);
-		}
-	}
 
 
 	virtual void OnInit()
@@ -140,11 +80,11 @@ public:
 
 		shader = SM.loadfromFile("vertexshader.txt","fragmentshader.txt"); // load (and compile, link) from file
 		if (shader==0) 
-         std::cout << "Error Loading, compiling or linking shader\n";
-      else
-      {
-         ProgramObject = shader->GetProgramObject();
-      }
+			std::cout << "Error Loading, compiling or linking shader\n";
+		else
+		{
+			ProgramObject = shader->GetProgramObject();
+		}
 
 	 //*** Para Textura: abre los shaders para texturas
 		shader1 = SM.loadfromFile("vertexshaderT.txt", "fragmentshaderT.txt"); // load (and compile, link) from file
@@ -155,68 +95,35 @@ public:
 			ProgramObject = shader1->GetProgramObject();
 		}
 
-      time0 = clock();
-      timer010 = 0.0f;
-      bUp = true;
+		time0 = clock();
+		timer010 = 0.0f;
+		bUp = true;
 
-
-	  initModel(&hobbit, "./Mallas/hobbit.obj");
-	  initModel(&dinamita_ptr, "./Mallas/dinamita.obj");
-
-
-	  objmodel_ptr = NULL;
-	  //initModel(objmodel_ptr, "./Mallas/hobbit.obj");
-
-	  if (!objmodel_ptr)
-	  {
-		  objmodel_ptr = glmReadOBJ("./Mallas/hobbit.obj");
-		  if (!objmodel_ptr)
-			  exit(0);
-
-		  glmUnitize(objmodel_ptr);
-		  glmFacetNormals(objmodel_ptr);
-		  glmVertexNormals(objmodel_ptr, 90.0);
-	  }
-
-	  //*** Para Textura: abrir malla de objeto a texturizar
-	  /*
-	  objmodel_ptr1 = NULL;
-
-	  if (!objmodel_ptr1)
-	  {
-		  objmodel_ptr1 = glmReadOBJ("./Mallas/dinamita.obj");
-		  if (!objmodel_ptr1)
-			  exit(0);
-
-		  glmUnitize(objmodel_ptr1);
-		  glmFacetNormals(objmodel_ptr1);
-		  glmVertexNormals(objmodel_ptr1, 90.0);
-	  }
-	  */
+		mundo = new Mundo();
  
-	  //*** Para Textura: abrir archivo de textura
-	  initialize_textures();
-      DemoLight();
+		
+		DemoLight();
 
 	}
 
 	virtual void OnResize(int w, int h)
-   {
-      if(h == 0) h = 1;
-	   float ratio = 1.0f * (float)w / (float)h;
+    {
+		if(h == 0) h = 1;
+		float ratio = 1.0f * (float)w / (float)h;
 
-      glMatrixMode(GL_PROJECTION);
-	   glLoadIdentity();
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
 	
-	   glViewport(0, 0, w, h);
+		glViewport(0, 0, w, h);
 
-      gluPerspective(45,ratio,1,100);
-	   glMatrixMode(GL_MODELVIEW);
-	   glLoadIdentity();
-	   gluLookAt(0.0f,0.0f,4.0f, 
-		          0.0,0.0,-1.0,
-			       0.0f,1.0f,0.0f);
-   }
+		gluPerspective(45,ratio,1,100);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		gluLookAt(0.0f,0.0f,4.0f, 
+					0.0,0.0,-1.0,
+					0.0f,1.0f,0.0f);
+    }
+
 	virtual void OnClose(void){}
 	virtual void OnMouseDown(int button, int x, int y) {}    
 	virtual void OnMouseUp(int button, int x, int y) {}
