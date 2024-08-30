@@ -61,3 +61,14 @@ void ModelUtilities::DrawModel(GLMmodel* model, float x, float y, float z, GLuin
 	glmDraw(model, GLM_SMOOTH | GLM_MATERIAL | GLM_TEXTURE);
 	glPopMatrix();
 }
+
+
+void ModelUtilities::DrawModel(GLMmodel* model, float x, float y, float z, GLuint texture, float scale_x, float scale_y, float scale_z)
+{
+	glPushMatrix();
+	glScalef(scale_x, scale_y, scale_z);
+	glTranslatef(x, y, z);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glmDraw(model, GLM_SMOOTH | GLM_MATERIAL | GLM_TEXTURE);
+	glPopMatrix();
+}

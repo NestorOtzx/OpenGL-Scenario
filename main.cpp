@@ -42,7 +42,8 @@ public:
 		glPushMatrix();
 		//posicion y rotacion de la camara
 		//glTranslatef(0, 0, -10);
-		glRotatef(180, 0, 1, 0);
+		glRotatef(135, 0, 1, 0);
+		//glRotatef(180, 0, 1, 0);
 
 		//*** Para Textura: llamado al shader para objetos texturizados 
 		if (shader1) shader1->begin();

@@ -17,5 +17,6 @@ public:
 
 	static void DrawModel(GLMmodel* model, float x, float y, float z);
 	static void DrawModel(GLMmodel* model, float x, float y, float z, GLuint texture);
+	static void DrawModel(GLMmodel* model, float x, float y, float z, GLuint texture, float scale_x, float scale_y, float scale_z);
 };
 
